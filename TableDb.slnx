@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="TableDb.Core/TableDb.Core.csproj" />
+  <Project Path="TableDb.Desktop/TableDb.Desktop.csproj" />
+  <Project Path="TableDb.Tests/TableDb.Tests.csproj" />
+</Solution>

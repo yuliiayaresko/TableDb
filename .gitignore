@@ -1,0 +1,14 @@
+# Збірка
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Системне
+Thumbs.db
+desktop.ini
