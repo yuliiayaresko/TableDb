@@ -48,6 +48,13 @@ api.MapPost("/", (CreateDatabaseRequest req, DatabaseService s) =>
 api.MapGet("/{db}", (string db, DatabaseService s) =>
     s.Use(db, false, d => DatabaseDto.From(d, s.IsDirty(db))));
 
+api.MapPut("/{db}", async (string db, HttpRequest request, DatabaseService s) =>
+{
+    using var reader = new StreamReader(request.Body);
+    var database = s.Replace(db, await reader.ReadToEndAsync());
+    return Results.Ok(DatabaseDto.From(database, false));
+});
+
 api.MapPost("/{db}/save", (string db, DatabaseService s) =>
 {
     s.Save(db);

@@ -214,6 +214,64 @@ $("resetSearchBtn").addEventListener("click", () => {
     renderTable();
 });
 
+const EMAIL_RE = /^[A-Za-z0-9](?:[A-Za-z0-9._%+-]*[A-Za-z0-9])?@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
+
+function formatHint(c) {
+    if (c.type === "enum") return "одне зі значень: " + c.enumValues.join(", ");
+    return {
+        integer: "ціле число, наприклад 42 або -7",
+        real: "дійсне число, наприклад 3.14 або 3,14",
+        char: "рівно один символ",
+        string: "довільний рядок",
+        email: "адреса e-mail, наприклад name@example.com"
+    }[c.type] ?? "";
+}
+
+function isValidValue(c, raw) {
+    if (raw === null || raw === undefined || raw === "") return true;
+    switch (c.type) {
+        case "integer": {
+            const v = raw.trim();
+            return /^[+-]?\d+$/.test(v) && v.replace(/^[+-]/, "").replace(/^0+(?=\d)/, "").length <= 19;
+        }
+        case "real": {
+            const v = raw.trim().replace(",", ".");
+            return /^[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?$/.test(v) && Number.isFinite(Number(v));
+        }
+        case "char": return raw.length === 1;
+        case "enum": return c.enumValues.includes(raw);
+        case "email": {
+            const v = raw.trim();
+            return v.length <= 254 && !v.includes("..") && EMAIL_RE.test(v);
+        }
+        default: return true;
+    }
+}
+
+function validateRowValues(values) {
+    for (let i = 0; i < state.table.columns.length; i++) {
+        const c = state.table.columns[i];
+        if (!isValidValue(c, values[i]))
+            return { index: i, message: `Поле «${c.name}» (${c.type}): значення «${values[i]}» некоректне — очікується ${formatHint(c)}.` };
+    }
+    return null;
+}
+
+function showRowError(message, index = null) {
+    $("rowError").textContent = "⚠ " + message;
+    state.table.columns.forEach((_, i) => $(`field_${i}`)?.classList.remove("invalid"));
+    if (index !== null) {
+        const input = $(`field_${index}`);
+        input?.classList.add("invalid");
+        input?.focus();
+    }
+}
+
+function clearRowError() {
+    $("rowError").textContent = "";
+    state.table.columns.forEach((_, i) => $(`field_${i}`)?.classList.remove("invalid"));
+}
+
 function openRowDialog(index = null) {
     state.editingIndex = index;
     const current = index === null ? null : state.table.rows.find(r => r.index === index)?.values;
@@ -228,6 +286,7 @@ function openRowDialog(index = null) {
             ? el("select", { id }, el("option", { value: "" }, "—"), ...c.enumValues.map(v => el("option", { value: v }, v)))
             : el("input", { id, type: "text", placeholder: TYPE_HINTS[c.type], maxlength: c.type === "char" ? 1 : undefined, autocomplete: "off" });
         input.value = value;
+        input.addEventListener("input", clearRowError);
         return [el("label", { for: id }, c.name, el("small", {}, typeLabel(c))), input];
     });
     $("rowFields").replaceChildren(...fields);
@@ -238,6 +297,11 @@ function openRowDialog(index = null) {
 $("rowForm").addEventListener("submit", async e => {
     e.preventDefault();
     const values = state.table.columns.map((_, i) => $(`field_${i}`).value);
+    const problem = validateRowValues(values);
+    if (problem) {
+        showRowError(problem.message, problem.index);
+        return;
+    }
     try {
         if (state.editingIndex === null) await Api.addRow(state.db.name, state.table.name, values);
         else await Api.updateRow(state.db.name, state.table.name, state.editingIndex, values);
@@ -245,7 +309,7 @@ $("rowForm").addEventListener("submit", async e => {
         toast(state.editingIndex === null ? "Рядок додано." : `Рядок ${state.editingIndex + 1} збережено.`);
         await reloadTable();
     } catch (err) {
-        $("rowError").textContent = "⚠ " + err.message;
+        showRowError(err.message);
     }
 });
 

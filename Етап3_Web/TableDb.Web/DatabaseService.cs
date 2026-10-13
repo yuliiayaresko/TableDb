@@ -110,6 +110,20 @@ public class DatabaseService
         }
     }
 
+    public Database Replace(string name, string json)
+    {
+        var database = JsonDatabaseStorage.Deserialize(json);
+        lock (_sync)
+        {
+            CheckFileName(name);
+            if (!string.Equals(name, database.Name, StringComparison.OrdinalIgnoreCase))
+                throw new ValidationException($"Назва бази у надісланому файлі («{database.Name}») не збігається з «{name}».");
+            _open[name] = new OpenDatabase(database);
+            _storage.Save(database, PathFor(name));
+            return database;
+        }
+    }
+
     private OpenDatabase GetOpen(string name)
     {
         if (_open.TryGetValue(name, out var open))

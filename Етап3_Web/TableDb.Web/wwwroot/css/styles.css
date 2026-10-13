@@ -206,6 +206,8 @@ select:focus, input:focus { outline: 2px solid var(--accent-soft); border-color:
 .row-fields { display: grid; grid-template-columns: 200px 1fr; gap: 10px 14px; align-items: center; }
 .row-fields label { font-size: 14px; }
 .row-fields label small { display: block; color: var(--muted); font-size: 12px; }
+.row-fields input.invalid, .row-fields select.invalid { border-color: var(--danger); background: var(--danger-soft); }
+.row-fields input.invalid:focus, .row-fields select.invalid:focus { outline-color: var(--danger); }
 
 .error { color: var(--danger); min-height: 20px; margin: 12px 0 0; font-size: 14px; }
 .error:not(:empty) { background: var(--danger-soft); padding: 8px 12px; border-radius: 6px; }

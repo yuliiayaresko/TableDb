@@ -8,6 +8,8 @@ public class MainForm : Form
     private const string FileFilter = "Таблична база (*.tdb.json)|*.tdb.json|Усі файли (*.*)|*.*";
 
     private readonly IDatabaseStorage _storage = new JsonDatabaseStorage();
+    private RemoteDatabaseStorage? _remote;
+    private string? _serverDbName;
     private Database? _database;
     private string? _filePath;
     private bool _isDirty;
@@ -24,6 +26,7 @@ public class MainForm : Form
     private readonly List<Control> _tableDependent = [];
     private readonly List<ToolStripItem> _tableDependentMenu = [];
     private readonly List<ToolStripItem> _dbDependentMenu = [];
+    private readonly List<ToolStripItem> _serverDependentMenu = [];
     private Button _createTableButton = null!;
 
     public MainForm()
@@ -94,6 +97,14 @@ public class MainForm : Form
         rows.DropDownItems.AddRange([add, edit, delete, new ToolStripSeparator(), search]);
         _tableDependentMenu.AddRange([add, edit, delete, search]);
 
+        var server = new ToolStripMenuItem("&Сервер");
+        var connect = new ToolStripMenuItem("Підключитися до сервера…", null, (_, _) => ConnectToServer());
+        var openRemote = new ToolStripMenuItem("Відкрити базу з сервера…", null, (_, _) => OpenFromServer());
+        var saveRemote = new ToolStripMenuItem("Зберегти на сервері", null, (_, _) => SaveToServer());
+        var disconnect = new ToolStripMenuItem("Відключитися", null, (_, _) => DisconnectServer());
+        server.DropDownItems.AddRange([connect, openRemote, new ToolStripSeparator(), saveRemote, disconnect]);
+        _serverDependentMenu.AddRange([openRemote, saveRemote, disconnect]);
+
         var help = new ToolStripMenuItem("&Довідка");
         help.DropDownItems.Add(new ToolStripMenuItem("Про програму", null, (_, _) => MessageBox.Show(this,
             "TableDb — часткова реалізація СУ табличними базами даних.\n\n" +
@@ -102,7 +113,7 @@ public class MainForm : Form
             "Автор: Яресько Юлія Олександрівна, ТТП-41, варіант 41.",
             "Про програму", MessageBoxButtons.OK, MessageBoxIcon.Information)));
 
-        menu.Items.AddRange([file, table, rows, help]);
+        menu.Items.AddRange([file, table, rows, server, help]);
         return menu;
     }
 
@@ -222,6 +233,8 @@ public class MainForm : Form
     {
         if (_database is null)
             return false;
+        if (!saveAs && _serverDbName is not null && _remote is not null)
+            return SaveToServer();
         var path = _filePath;
         if (saveAs || path is null)
         {
@@ -251,10 +264,92 @@ public class MainForm : Form
         }
     }
 
+    private void ConnectToServer()
+    {
+        var url = InputDialog.Show(this, "Підключення до сервера",
+            "Адреса сервера TableDb Web:", _remote?.ServerUrl ?? "http://localhost:5000");
+        if (url is null)
+            return;
+        try
+        {
+            var remote = new RemoteDatabaseStorage(url);
+            var databases = remote.ListDatabases();
+            _remote?.Dispose();
+            _remote = remote;
+            UpdateUi();
+            SetStatus($"Підключено до {remote.ServerUrl} — баз на сервері: {databases.Count}.");
+        }
+        catch (Exception ex) when (ex is ValidationException or IOException)
+        {
+            UiHelpers.ShowError(this, "Не вдалося підключитися:\n" + ex.Message);
+        }
+    }
+
+    private void OpenFromServer()
+    {
+        if (_remote is null || !ConfirmDiscardChanges())
+            return;
+        try
+        {
+            var databases = _remote.ListDatabases();
+            if (databases.Count == 0)
+            {
+                UiHelpers.ShowError(this, "На сервері ще немає жодної бази.");
+                return;
+            }
+            var name = ChooseDialog.Show(this, "Бази на сервері",
+                $"Сервер {_remote.ServerUrl} — оберіть базу:", databases);
+            if (name is null)
+                return;
+            SetDatabase(_remote.Load(name), null);
+            _serverDbName = name;
+            UpdateUi();
+            SetStatus($"Базу «{name}» завантажено із сервера {_remote.ServerUrl}");
+        }
+        catch (Exception ex) when (ex is ValidationException or IOException)
+        {
+            UiHelpers.ShowError(this, "Не вдалося відкрити базу з сервера:\n" + ex.Message);
+        }
+    }
+
+    private bool SaveToServer()
+    {
+        if (_remote is null || _database is null)
+            return false;
+        try
+        {
+            var name = _serverDbName ?? _database.Name;
+            _remote.Save(_database, name);
+            _serverDbName = name;
+            _isDirty = false;
+            UpdateUi();
+            SetStatus($"Базу «{name}» збережено на сервері {_remote.ServerUrl}");
+            return true;
+        }
+        catch (Exception ex) when (ex is ValidationException or IOException)
+        {
+            UiHelpers.ShowError(this, "Не вдалося зберегти базу на сервері:\n" + ex.Message);
+            return false;
+        }
+    }
+
+    private void DisconnectServer()
+    {
+        if (_remote is null)
+            return;
+        var url = _remote.ServerUrl;
+        _remote.Dispose();
+        _remote = null;
+        _serverDbName = null;
+        UpdateUi();
+        SetStatus($"Відключено від {url}. База залишилася відкритою локально.");
+    }
+
     public void SetDatabase(Database database, string? path)
     {
         _database = database;
         _filePath = path;
+        _serverDbName = null;
         _isDirty = false;
         RefreshTables(database.Tables.FirstOrDefault()?.Name);
     }
@@ -432,10 +527,16 @@ public class MainForm : Form
         foreach (var item in _dbDependentMenu)
             item.Enabled = hasDb;
         _createTableButton.Enabled = hasDb;
+        foreach (var item in _serverDependentMenu)
+            item.Enabled = _remote is not null;
+        if (_serverDependentMenu.Count > 1)
+            _serverDependentMenu[1].Enabled = _remote is not null && hasDb;
 
         _dbLabel.Text = hasDb ? "База: " + _database!.Name : "База не відкрита";
-        var fileName = _filePath is null ? "не збережено" : Path.GetFileName(_filePath);
-        Text = hasDb ? $"TableDb — {_database!.Name}{(_isDirty ? " *" : "")} ({fileName})" : "TableDb";
+        var source = _serverDbName is not null && _remote is not null
+            ? $"сервер {_remote.ServerUrl}"
+            : _filePath is null ? "не збережено" : Path.GetFileName(_filePath);
+        Text = hasDb ? $"TableDb — {_database!.Name}{(_isDirty ? " *" : "")} ({source})" : "TableDb";
         if (!hasDb)
             SetStatus("Створіть нову базу (Ctrl+N) або відкрийте існуючу (Ctrl+O).");
     }
