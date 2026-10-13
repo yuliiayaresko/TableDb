@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TableDb Web</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">
+        <span class="logo">▦</span>
+        <div>
+            <h1>TableDb Web</h1>
+            <p>СУ табличними базами даних · типи enum та email · пошук за шаблоном</p>
+        </div>
+    </div>
+    <span class="author">Яресько Ю. О., ТТП-41, варіант 41</span>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <section class="panel">
+            <h2>База даних</h2>
+            <select id="dbSelect" aria-label="База даних"></select>
+            <div id="dbState" class="db-state"></div>
+            <div class="btn-grid">
+                <button id="newDbBtn" class="btn">Нова</button>
+                <button id="saveDbBtn" class="btn primary">Зберегти</button>
+                <button id="reloadDbBtn" class="btn">Скасувати зміни</button>
+                <button id="exportDbBtn" class="btn">Експорт</button>
+                <button id="importDbBtn" class="btn wide">Імпорт з файлу…</button>
+            </div>
+            <input id="importFile" type="file" accept=".json" hidden>
+        </section>
+
+        <section class="panel grow">
+            <div class="panel-head">
+                <h2>Таблиці</h2>
+                <button id="createTableBtn" class="btn small primary">+ Створити</button>
+            </div>
+            <ul id="tableList" class="table-list"></ul>
+        </section>
+    </aside>
+
+    <main class="content">
+        <div id="emptyState" class="empty">Оберіть базу даних і таблицю ліворуч.</div>
+
+        <div id="tableView" hidden>
+            <div class="table-head">
+                <div>
+                    <h2 id="tableTitle"></h2>
+                    <div id="schema" class="schema"></div>
+                </div>
+                <button id="addRowBtn" class="btn primary">+ Додати рядок</button>
+            </div>
+
+            <form id="searchForm" class="search">
+                <label>Пошук за шаблоном
+                    <input id="patternInput" type="text" placeholder="напр. *@gmail.com або Іван*" autocomplete="off">
+                </label>
+                <label>у полі
+                    <select id="columnSelect"></select>
+                </label>
+                <label class="check"><input id="caseInput" type="checkbox"> з урахуванням регістру</label>
+                <button class="btn primary" type="submit">Знайти</button>
+                <button class="btn" type="button" id="resetSearchBtn">Показати всі</button>
+                <span class="hint">* — будь-які символи, ? — один символ</span>
+            </form>
+
+            <div id="searchSummary" class="summary" hidden></div>
+
+            <div class="grid-wrap">
+                <table class="grid">
+                    <thead id="gridHead"></thead>
+                    <tbody id="gridBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<dialog id="tableDialog" class="modal">
+    <form id="tableForm" method="dialog">
+        <h3>Створення таблиці</h3>
+        <label class="field">Назва таблиці
+            <input id="tableNameInput" type="text" autocomplete="off">
+        </label>
+        <div class="cols-head">
+            <span>Назва поля</span><span>Тип</span><span>Значення enum (через ;)</span><span></span>
+        </div>
+        <div id="columnsEditor"></div>
+        <button type="button" id="addColumnBtn" class="btn small">+ Поле</button>
+        <p class="error" id="tableError"></p>
+        <div class="modal-actions">
+            <button type="button" class="btn" data-close>Скасувати</button>
+            <button type="submit" class="btn primary">Створити</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="rowDialog" class="modal">
+    <form id="rowForm" method="dialog">
+        <h3 id="rowDialogTitle"></h3>
+        <div id="rowFields" class="row-fields"></div>
+        <p class="error" id="rowError"></p>
+        <div class="modal-actions">
+            <button type="button" class="btn" data-close>Скасувати</button>
+            <button type="submit" class="btn primary" id="rowSubmitBtn">Зберегти</button>
+        </div>
+    </form>
+</dialog>
+
+<dialog id="dbDialog" class="modal narrow">
+    <form id="dbForm" method="dialog">
+        <h3>Нова база даних</h3>
+        <label class="field">Назва бази
+            <input id="dbNameInput" type="text" autocomplete="off">
+        </label>
+        <p class="error" id="dbError"></p>
+        <div class="modal-actions">
+            <button type="button" class="btn" data-close>Скасувати</button>
+            <button type="submit" class="btn primary">Створити</button>
+        </div>
+    </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

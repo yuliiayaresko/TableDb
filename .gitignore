@@ -12,3 +12,6 @@ obj/
 # Системне
 Thumbs.db
 desktop.ini
+
+# Робочі теки інструментів
+.claude/

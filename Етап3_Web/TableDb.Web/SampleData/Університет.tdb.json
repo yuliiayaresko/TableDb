@@ -1,0 +1,176 @@
+{
+  "Name": "Університет",
+  "Tables": [
+    {
+      "Name": "Студенти",
+      "Columns": [
+        {
+          "Name": "Id",
+          "Type": "Integer",
+          "EnumValues": []
+        },
+        {
+          "Name": "ПІБ",
+          "Type": "String",
+          "EnumValues": []
+        },
+        {
+          "Name": "Email",
+          "Type": "Email",
+          "EnumValues": []
+        },
+        {
+          "Name": "Курс",
+          "Type": "Enum",
+          "EnumValues": [
+            "1",
+            "2",
+            "3",
+            "4"
+          ]
+        },
+        {
+          "Name": "Форма навчання",
+          "Type": "Enum",
+          "EnumValues": [
+            "денна",
+            "заочна"
+          ]
+        },
+        {
+          "Name": "Рейтинг",
+          "Type": "Real",
+          "EnumValues": []
+        },
+        {
+          "Name": "Група",
+          "Type": "Char",
+          "EnumValues": []
+        }
+      ],
+      "Rows": [
+        {
+          "Values": [
+            "1",
+            "Іваненко Іван",
+            "ivan.ivanenko@gmail.com",
+            "4",
+            "денна",
+            "92.4",
+            "A"
+          ]
+        },
+        {
+          "Values": [
+            "2",
+            "Петренко Олена",
+            "olena.p@ukr.net",
+            "3",
+            "денна",
+            "88.1",
+            "B"
+          ]
+        },
+        {
+          "Values": [
+            "3",
+            "Іванова Марія",
+            "maria.ivanova@gmail.com",
+            "4",
+            "заочна",
+            "95",
+            "A"
+          ]
+        },
+        {
+          "Values": [
+            "4",
+            "Коваль Петро",
+            "petro.koval@knu.ua",
+            "1",
+            "денна",
+            "74.6",
+            "C"
+          ]
+        },
+        {
+          "Values": [
+            "5",
+            "Шевчук Анна",
+            "anna.shevchuk@i.ua",
+            "2",
+            "заочна",
+            "81.3",
+            "B"
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "Дисципліни",
+      "Columns": [
+        {
+          "Name": "Код",
+          "Type": "String",
+          "EnumValues": []
+        },
+        {
+          "Name": "Назва",
+          "Type": "String",
+          "EnumValues": []
+        },
+        {
+          "Name": "Кредити",
+          "Type": "Real",
+          "EnumValues": []
+        },
+        {
+          "Name": "Контроль",
+          "Type": "Enum",
+          "EnumValues": [
+            "залік",
+            "екзамен"
+          ]
+        },
+        {
+          "Name": "Email викладача",
+          "Type": "Email",
+          "EnumValues": []
+        }
+      ],
+      "Rows": [
+        {
+          "Values": [
+            "ТТП-101",
+            "Об'єктно-орієнтоване програмування",
+            "5",
+            "екзамен",
+            "oop.teacher@knu.ua"
+          ]
+        },
+        {
+          "Values": [
+            "ТТП-204",
+            "Бази даних",
+            "4.5",
+            "екзамен",
+            "db.teacher@knu.ua"
+          ]
+        },
+        {
+          "Values": [
+            "ТТП-310",
+            "Інформаційні технології",
+            "4",
+            "залік",
+            "it.teacher@knu.ua"
+          ]
+        }
+      ]
+    }
+  ],
+  "TableNames": [
+    "Студенти",
+    "Дисципліни"
+  ]
+}
